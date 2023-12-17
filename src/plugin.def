@@ -1,0 +1,8 @@
+LIBRARY	"pcmd"
+
+EXPORTS
+	Supports
+	Load
+	Unload
+	AmxLoad
+	AmxUnload
