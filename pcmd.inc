@@ -6,18 +6,10 @@
 #endif
 #define _PCMD_INCLUDE_included
 
-enum CMD_RETURN {
-	PCMD_NOT_FOUND = 0,
-	PCMD_SUCCESS = 1,
-	PCMD_FAIL = -1
-};
+#tryinclude <a_samp>
 
 // Natives
 native PCMD_COMMAND(playerid, cmdtext[]);
-
-// Forwards
-forward OnPlayerCommandReceived(playerid, cmdtext[]);
-forward OnPlayerCommandPerformed(playerid, cmdtext[], CMD_RETURN:success);
 
 // Macros
 #define CMD:%0(%1) \
@@ -27,22 +19,16 @@ forward OnPlayerCommandPerformed(playerid, cmdtext[], CMD_RETURN:success);
 #define PCMD:%1(%2) \ 
 					  CMD:%1(%2)
 
-#define COMMAND:%1(%2) CMD:%1(%2)
+#define COMMAND:%1(%2) \ 
+					  CMD:%1(%2)
 
 // Callback hooks
-public OnPlayerCommandText(playerid, cmdtext[]) {
-	PCMD_COMMAND(playerid, cmdtext);
-
-	#if defined pcmd_OnPlayerCommandText
-		pcmd_OnPlayerCommandText(playerid, cmdtext);
-	#else
-		return 1;
+public OnPlayerCommandText(playerid, cmdtext[]){
+    
+    #if defined pcmd_OnPlayerCommandText
+		forward pcmd_OnPlayerCommandText(playerid, cmdtext[]);
 	#endif
-	#if defined OnPlayerCommandPerformed
-		return OnPlayerCommandPerformed(playerid, cmdtext, CMD_RETURN:PCMD_NOT_FOUND);
-	#else
-		return CallLocalFunction("OnPlayerCommandPerformed", "isi", playerid, cmdtext, 0);
-	#endif
+	return PCMD_COMMAND(playerid, cmdtext);
 }
 
 #if defined _ALS_OnPlayerCommandText
@@ -54,3 +40,7 @@ public OnPlayerCommandText(playerid, cmdtext[]) {
 #if defined pcmd_OnPlayerCommandText
 	forward pcmd_OnPlayerCommandText(playerid, cmdtext[]);
 #endif
+
+// Forwards
+forward OnPlayerCommandReceived(playerid, cmdtext[]);
+forward OnPlayerCommandPerformed(playerid, cmdtext[], success);
