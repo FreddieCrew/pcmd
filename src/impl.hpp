@@ -8,19 +8,9 @@ is for declaring implementation functions for the plugin's core functionality.
 #ifndef PROJECTNAME_IMPL_H
 #define PROJECTNAME_IMPL_H
 
-#include <cstdint>
-#include <cstdio>
-
-#include <amx/amx.h>
-#include <plugincommon.h>
-#include <unordered_map>
-#include "common.hpp"
-#include "natives.hpp"
-
 using namespace std;
 
 namespace Impl {
-	void Murmur3(const char* key, size_t len, int* hash);
 };
 
 #endif

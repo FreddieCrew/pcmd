@@ -1,8 +1,16 @@
-#include "impl.hpp"
+#include <cstdint>
+#include <stddef.h>
+#include <cstdio>
+
+#include <amx/amx.h>
+#include <plugincommon.h>
+#include <unordered_map>
+#include "common.hpp"
+#include "natives.hpp"
 
 logprintf_t logprintf;
 
-#define MAX_L (17 + 1)
+#define MAX_L 1+16
 
 struct PCMD_CMD_AMX {
 	AMX* amx;
@@ -11,9 +19,55 @@ struct PCMD_CMD_AMX {
 }
 
 AMX_funcs[MAX_L];
-int AMX_l = 0;
-std::unordered_map <int, int> Alts[MAX_L];
-size_t Alts_n = 0;
+int AMX_l;
+
+/*void Murmur3(const char* key, size_t len, int* hash) {
+	const uint32_t c1 = 0xcc9e2d51;
+	const uint32_t c2 = 0x1b873593;
+	const int r1 = 15;
+	const int r2 = 13;
+	const int m = 5;
+	const uint32_t n = 0xe6546b64;
+
+	*hash = 0;
+
+	const int nblocks = len / 4;
+	const uint32_t* blocks = reinterpret_cast<const uint32_t*>(key);
+
+	for (int i = 0; i < nblocks; ++i) {
+		uint32_t k = blocks[i];
+		k *= c1;
+		k = (k << r1) | (k >> (32 - r1));
+		k *= c2;
+
+		*hash ^= k;
+		*hash = (*hash << r2) | (*hash >> (32 - r2));
+		*hash = *hash * m + n;
+	}
+
+	const uint8_t* tail = reinterpret_cast<const uint8_t*>(key + nblocks * 4);
+	uint32_t k1 = 0;
+
+	switch (len & 3) {
+	case 3:
+		k1 ^= static_cast<uint32_t>(tail[2]) << 16;
+	case 2:
+		k1 ^= static_cast<uint32_t>(tail[1]) << 8;
+	case 1:
+		k1 ^= static_cast<uint32_t>(tail[0]);
+		k1 *= c1;
+		k1 = (k1 << r1) | (k1 >> (32 - r1));
+		k1 *= c2;
+		*hash ^= k1;
+	}
+
+	*hash ^= len;
+	*hash ^= (*hash >> 16);
+	*hash *= 0x85ebca6b;
+	*hash ^= (*hash >> 13);
+	*hash *= 0xc2b2ae35;
+	*hash ^= (*hash >> 16);
+}*/
 
 
 cell Natives::PCMD_COMMAND(AMX* amx, cell* params) {
@@ -47,7 +101,6 @@ breakpoint:
 	cell retval{}, params_addr;
 	int i;
 
-	try {
 		for (i = 0; i <= AMX_l; ++i) {
 			if ((AMX_funcs[i].amx != NULL) && (amx_FindPublic(AMX_funcs[i].amx, cmdtext, &pubidx) == AMX_ERR_NONE)) {
 				if (AMX_funcs[i].OPCR != 0x7FFFFFFF) {
@@ -82,23 +135,13 @@ breakpoint:
 					amx_Exec(AMX_funcs[i].amx, &retval, AMX_funcs[i].OPCP);
 					amx_Release(AMX_funcs[i].amx, params_addr);
 				}
+
 				return 1;
 			}
 		}
 
-		if (Alts_n != 0) {
-			int hash;
-			Impl::Murmur3(cmdtext, (cmdtext[pos]) ? (pos - 1) : (pos), &hash);
-			if (cmdtext[pos]) {
-				pos--;
-				while (cmdtext[++pos] == ' ') {}
-			}
-
-			std::unordered_map<int, int>::const_iterator alt;
-
 			for (i = 0; i <= AMX_l; ++i) {
-				if ((AMX_funcs[i].amx != NULL) && ((alt = Alts[i].find(hash)) != Alts[i].end())) {
-					pubidx = alt->second;
+				if ((AMX_funcs[i].amx != NULL)) {
 					if (AMX_funcs[i].OPCR != 0x7FFFFFFF) {
 						cmdtext[0] = '/';
 						if (cmd_end > 0)
@@ -130,7 +173,6 @@ breakpoint:
 					}
 					return 1;
 				}
-			}
 		}
 
 		if (AMX_funcs[0].OPCP != 0x7FFFFFFF) {
@@ -147,17 +189,13 @@ breakpoint:
 				return false;
 			}
 		}
-	}
-	catch (const std::exception& e) {
-		logprintf("[PCMD]: Exception occured on %s: %s", __func__, e.what());
-	}
 	return 1;
 }
 
 
 AMX_NATIVE_INFO PluginNatives[] = {
 	{"PCMD_COMMAND", Natives::PCMD_COMMAND},
-	{NULL, NULL}
+	{0, 0},
 };
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports() {
@@ -202,7 +240,5 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX* amx)
 				break;
 			}
 	}
-	Alts_n -= Alts[idx].size();
-	Alts[idx].clear();
 	return AMX_ERR_NONE;
 }
