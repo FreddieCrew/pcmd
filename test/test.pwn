@@ -6,7 +6,7 @@ main() {
 }
 
 public OnPlayerCommandPerformed(playerid, cmdtext[], success) {
-	if(!success) {
+	if (!success) {
 		SendClientMessage(playerid, -1, "Invalid command");
 	}
 	printf("playerid: %d | Command: %s | Success: %s", playerid, cmdtext, (success) ? ("Success") : ("Fail"));
